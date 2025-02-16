@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "かんたん英単語翻訳",
+  "version": "1.0",
+  "description": "英語にマウスを乗せると日本語訳が表示されます",
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": ["content.js"]
+  }],
+  "web_accessible_resources": [{
+    "resources": ["data/*"],
+    "matches": ["<all_urls>"]
+  }]
+}
+

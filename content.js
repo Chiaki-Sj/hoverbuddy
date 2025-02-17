@@ -1,60 +1,77 @@
+// 辞書を読み込む関数
 async function loadDictionary(filename) {
   const url = chrome.runtime.getURL(`data/${filename}`);
   const response = await fetch(url);
   return await response.text();
 }
 
+async function loadAllDictionaries() {
+  console.log('辞書を読み込み始めるよ！');
+  const dict1 = await loadDictionary('supplement.tsv');
+  console.log('supplement.tsv を読み込んだよ！');
+  return dict1;  // とりあえず1つだけ
+}
 
+// 必要な変数を準備
+const dictionary = {};
+let currentPopup = null;  // 今表示してるポップアップ
+let mouseX = 0;
+let mouseY = 0;
+
+// ポップアップを表示する関数
 function showPopup(text, event) {
-  // 古いポップアップを消す
   if (currentPopup) {
     currentPopup.remove();
   }
-  
-  const meaning = dictionary[text.toLowerCase()] || "未登録の単語です";
+  const meaning = dictionary[text.toLowerCase()] || "わからないにゃ...";
   const popup = document.createElement('div');
   popup.style.position = 'fixed';
-  popup.textContent = meaning;
+  popup.innerHTML = `
+    <div style="background: white; padding: 10px; border-radius: 15px; border: 2px solid pink; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+      <span>${meaning} 🐾</span>
+    </div>
+  `;
   popup.style.left = event.clientX + 10 + 'px';
   popup.style.top = event.clientY + 10 + 'px';
-  popup.style.backgroundColor = 'Pink';
-  popup.style.padding = '5px';
-  popup.style.border = '1px solid black';
-  document.body.appendChild(popup);
-  
-  // 新しいポップアップを覚えておく
   currentPopup = popup;
+  document.body.appendChild(popup);
 }
-let currentPopup = null;  // 今表示してるポップアップを覚えておく
-let mouseX = 0;
-let mouseY = 0;
+
+// マウスの位置を記録
 document.addEventListener('mousemove', function(e) {
   mouseX = e.clientX;
   mouseY = e.clientY;
 });
 
+// シフトキーを押したときにポップアップを表示
 document.addEventListener('keydown', function(e) {
-
   if (e.target.textContent && e.shiftKey) {
     showPopup(e.target.textContent, {clientX: mouseX, clientY: mouseY});
   }
 });
+
+// シフトキーを離したときにポップアップを消す
 document.addEventListener('keyup', function(e) {
   if (e.key === 'Shift' && currentPopup) {
     currentPopup.remove();
     currentPopup = null;
   }
 });
-const dictionary = {};
+
+// 辞書データを読み込む
 console.log('dictionaryの読み込みを開始します');
-loadDictionary('supplement.tsv').then(text => {
+loadAllDictionaries().then(text => {
+  console.log('辞書の最初の部分:', text.slice(0, 100));  // 👈 この行を追加
+  console.log('辞書の中身の例:', text.split('\n')[0]);
   text.split('\n').forEach(line => {
-    const parts = line.split('\t');
-    const word = parts[0].split('=')[1];  // word=painful から painful を取り出す
-    dictionary[word] = parts[1];  // とりあえず最初の意味だけ入れてみる
+    const [word, meaning] = line.split('\t');  // タブで分割
+    if (word && meaning) {  // wordとmeaningが両方存在する場合だけ
+      dictionary[word.toLowerCase()] = meaning;
+    }
   });
-  console.log('dictionaryの読み込みが完了しました');
-  // dictionaryの中身を見る
+     // 📌 ここで辞書の中身をチェック！
+  console.log('📖 読み込まれた辞書の例:', Object.entries(dictionary).slice(0, 5));
 
+    
+  console.log('dictionaryの読み込みが完了しました')
 });
-
